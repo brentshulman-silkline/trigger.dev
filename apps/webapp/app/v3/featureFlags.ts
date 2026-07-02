@@ -19,6 +19,7 @@ export const FEATURE_FLAG = {
   computeMigrationRequireTemplate: "computeMigrationRequireTemplate",
   devBranchesEnabled: "devBranchesEnabled",
   runOpsMintKind: "runOpsMintKind",
+  queueMetricsUiEnabled: "queueMetricsUiEnabled",
 } as const;
 
 export const FeatureFlagCatalog = {
@@ -54,6 +55,9 @@ export const FeatureFlagCatalog = {
   // Per-org run-ops-id mint cutover. Defaults to "cuid"; only honored when
   // RUN_OPS_MINT_ENABLED is on AND isSplitEnabled() is true.
   [FEATURE_FLAG.runOpsMintKind]: z.enum(["cuid", "runOpsId"]),
+  // Per-org access to the Queue Metrics dashboard UI (view only; emission is global and
+  // separate). Off unless enabled for the org.
+  [FEATURE_FLAG.queueMetricsUiEnabled]: z.coerce.boolean(),
 };
 
 export type FeatureFlagKey = keyof typeof FeatureFlagCatalog;
