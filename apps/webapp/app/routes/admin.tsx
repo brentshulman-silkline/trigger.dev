@@ -39,6 +39,10 @@ export default function Page() {
               to: "/admin/feature-flags",
             },
             {
+              label: "Queue Metrics",
+              to: "/admin/queue-metrics",
+            },
+            {
               label: "Notifications",
               to: "/admin/notifications",
             },

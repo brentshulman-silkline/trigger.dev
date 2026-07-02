@@ -17,6 +17,7 @@
     "typecheck": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" tsc --noEmit -p ./tsconfig.check.json",
     "db:seed": "tsx seed.ts",
     "db:seed:ai-spans": "tsx seed-ai-spans.mts",
+    "db:seed:queue-metrics": "tsx seed-queue-metrics.mts",
     "upload:sourcemaps": "bash ./upload-sourcemaps.sh",
     "test": "vitest --no-file-parallelism",
     "eval:dev": "evalite watch"
@@ -57,6 +58,7 @@
     "@internal/dashboard-agent": "workspace:*",
     "@internal/dashboard-agent-db": "workspace:*",
     "@internal/llm-model-catalog": "workspace:*",
+    "@internal/metrics-pipeline": "workspace:*",
     "@internal/redis": "workspace:*",
     "@internal/run-engine": "workspace:*",
     "@internal/run-ops-database": "workspace:*",
