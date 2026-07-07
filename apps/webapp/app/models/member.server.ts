@@ -124,7 +124,9 @@ export async function removeTeamMember({
 
       return member;
     },
-    { isolationLevel: "Serializable" }
+    // Retry the loser of a serialization conflict transparently rather than
+    // surfacing it (concurrent last-member removals are rare and quick).
+    { isolationLevel: "Serializable", maxRetries: 3 }
   );
 
   if (!removed) {
