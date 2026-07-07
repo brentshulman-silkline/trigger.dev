@@ -6,6 +6,7 @@ import { logger } from "~/services/logger.server";
 import { getDefaultEnvironmentConcurrencyLimit } from "~/services/platform.v3.server";
 import { rbac } from "~/services/rbac.server";
 import { ssoController } from "~/services/sso.server";
+import { ServiceValidationError } from "~/v3/services/common.server";
 
 export const INVITE_NOT_FOUND = "Invite not found";
 export const INVITE_BLOCKED_DIRECTORY_MANAGED =
@@ -88,7 +89,7 @@ export async function removeTeamMember({
   });
 
   if (!org) {
-    throw new Error("User does not have access to this organization");
+    throw new ServiceValidationError("User does not have access to this organization", 403);
   }
 
   // Scope the target to this org. A member id is a globally unique key, so
@@ -103,7 +104,7 @@ export async function removeTeamMember({
   });
 
   if (!member) {
-    throw new Error("Member not found in this organization");
+    throw new ServiceValidationError("Member not found in this organization", 404);
   }
 
   await prisma.orgMember.delete({ where: { id: member.id } });
