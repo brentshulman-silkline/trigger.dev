@@ -92,24 +92,38 @@ export async function removeTeamMember({
     throw new ServiceValidationError("User does not have access to this organization", 403);
   }
 
-  // Scope the target to this org. A member id is a globally unique key, so
-  // deleting by id alone would remove members of other orgs; bind it to the
-  // resolved org and reject a foreign id.
-  const member = await prisma.orgMember.findFirst({
-    where: { id: memberId, organizationId: org.id },
-    include: {
-      organization: true,
-      user: true,
+  // Serializable: the "keep at least one member" check and the delete must not
+  // interleave with a concurrent removal, or two requests could each pass the
+  // count and leave the org with zero members. Guard lives here (not per-caller)
+  // so the dashboard and the management API both get it.
+  return prisma.$transaction(
+    async (tx) => {
+      // Scope the target to this org. A member id is a globally unique key, so
+      // deleting by id alone would remove members of other orgs; bind it to the
+      // resolved org and reject a foreign id.
+      const member = await tx.orgMember.findFirst({
+        where: { id: memberId, organizationId: org.id },
+        include: {
+          organization: true,
+          user: true,
+        },
+      });
+
+      if (!member) {
+        throw new ServiceValidationError("Member not found in this organization", 404);
+      }
+
+      const memberCount = await tx.orgMember.count({ where: { organizationId: org.id } });
+      if (memberCount <= 1) {
+        throw new ServiceValidationError("Cannot remove the last member of an organization", 400);
+      }
+
+      await tx.orgMember.delete({ where: { id: member.id } });
+
+      return member;
     },
-  });
-
-  if (!member) {
-    throw new ServiceValidationError("Member not found in this organization", 404);
-  }
-
-  await prisma.orgMember.delete({ where: { id: member.id } });
-
-  return member;
+    { isolationLevel: PrismaNamespace.TransactionIsolationLevel.Serializable }
+  );
 }
 
 export async function inviteMembers({
