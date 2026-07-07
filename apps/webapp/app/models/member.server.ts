@@ -1,5 +1,5 @@
 import type { Organization, OrgMember, Project } from "@trigger.dev/database";
-import { Prisma as PrismaNamespace, type Prisma, prisma } from "~/db.server";
+import { Prisma as PrismaNamespace, type Prisma, prisma, $transaction } from "~/db.server";
 import { createEnvironment } from "./organization.server";
 import { customAlphabet } from "nanoid";
 import { logger } from "~/services/logger.server";
@@ -96,7 +96,9 @@ export async function removeTeamMember({
   // interleave with a concurrent removal, or two requests could each pass the
   // count and leave the org with zero members. Guard lives here (not per-caller)
   // so the dashboard and the management API both get it.
-  return prisma.$transaction(
+  const removed = await $transaction(
+    prisma,
+    "removeTeamMember",
     async (tx) => {
       // Scope the target to this org. A member id is a globally unique key, so
       // deleting by id alone would remove members of other orgs; bind it to the
@@ -122,8 +124,14 @@ export async function removeTeamMember({
 
       return member;
     },
-    { isolationLevel: PrismaNamespace.TransactionIsolationLevel.Serializable }
+    { isolationLevel: "Serializable" }
   );
+
+  if (!removed) {
+    throw new Error("removeTeamMember transaction did not return a member");
+  }
+
+  return removed;
 }
 
 export async function inviteMembers({
